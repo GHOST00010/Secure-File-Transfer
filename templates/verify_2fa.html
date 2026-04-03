@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureShare - 2FA Verification</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="glass-card">
+        <h2>🔐 2FA Verification</h2>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div style="margin-bottom: 25px;">
+            <p style="font-size: 16px; opacity: 0.8; margin-bottom: 15px;">Scan this code with your Authenticator app.</p>
+            <div style="background: white; padding: 15px; border-radius: 16px; display: inline-block;">
+                <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" style="width: 200px; height: 200px; display: block;">
+            </div>
+        </div>
+
+        <div style="background: rgba(255, 204, 0, 0.1); border: 1px solid rgba(255, 204, 0, 0.2); padding: 10px; border-radius: 8px; margin-bottom: 20px;">
+            <p style="font-size: 14px; color: #ffcc00; margin: 0;">
+                <strong>DEBUG:</strong> Current TOTP: <code>{{ otp_val }}</code>
+            </p>
+        </div>
+
+        <form method="POST">
+            <input type="text" name="otp" placeholder="••••••" required autocomplete="off" maxlength="6" style="text-align: center; letter-spacing: 12px; font-weight: 700; font-size: 24px; padding: 15px;">
+            <button type="submit">Verify & Access Vault</button>
+        </form>
+        
+        <a href="{{ url_for('logout') }}" class="link-btn">Cancel and Logout</a>
+    </div>
+</body>
+</html>

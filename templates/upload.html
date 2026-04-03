@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureShare - Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .dashboard-container {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 40px 20px;
+        }
+        @media (max-width: 900px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        .header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--glass);
+            padding: 25px 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            margin-bottom: 20px;
+        }
+        .file-card {
+            background: var(--glass);
+            padding: 30px;
+            border-radius: 24px;
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+        }
+        .file-list-scroll {
+            max-height: 500px;
+            overflow-y: auto;
+            margin-top: 20px;
+            padding-right: 10px;
+        }
+        .file-list-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .file-list-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        .badge {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            background: rgba(34, 197, 94, 0.2);
+            color: #86efac;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        .filename-text {
+            font-size: 18px;
+            font-weight: 500;
+            color: #f1f5f9;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header">
+            <h1 style="margin:0; font-size: 28px; font-weight: 700;">Welcome, {{ session['username'] }}</h1>
+            <a href="{{ url_for('logout') }}" style="color: var(--danger); text-decoration: none; font-weight: 700; font-size: 18px;">Logout</a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div style="grid-column: 1 / -1;">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="file-card">
+            <h3>📤 Upload New File</h3>
+            <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data">
+                <div style="background: rgba(255, 255, 255, 0.03); border: 2px dashed rgba(255, 255, 255, 0.1); padding: 30px; border-radius: 16px; margin-bottom: 20px; text-align: center;">
+                    <input type="file" name="file" required style="margin-bottom: 0; width: auto; font-size: 16px;">
+                </div>
+                <button type="submit">Encrypt & Upload Safe</button>
+            </form>
+            <p style="font-size: 14px; opacity: 0.6; margin-top: 15px; text-align: center;">🛡️ Files are AES-256 encrypted before leaving your browser.</p>
+        </div>
+
+        <div class="file-card">
+            <h3>📄 My Encrypted Files</h3>
+            <div class="file-list-scroll">
+                {% if my_files %}
+                    {% for file in my_files %}
+                        <div class="file-item" style="flex-direction: column; align-items: stretch; gap: 15px;">
+                            <span class="filename-text">{{ file['filename'] }}</span>
+                            
+                            <div class="file-actions" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                                <div style="display: flex; gap: 10px;">
+                                    <form action="{{ url_for('delete_file', file_id=file['id']) }}" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to permanently delete this file?')">
+                                        <button type="submit" class="btn-sm btn-danger" style="width: auto; padding: 8px 16px; font-size: 14px;">🗑️ Remove</button>
+                                    </form>
+                                </div>
+
+                                <!-- Public Link Support -->
+                                <form action="{{ url_for('generate_link', file_id=file['id']) }}" method="POST" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                                    <input type="password" name="passphrase" placeholder="Link Passphrase" required style="width: 140px; padding: 8px 12px; margin: 0; font-size: 13px; height: 36px; border-radius: 8px;">
+                                    <button type="submit" class="btn-sm btn-violet" style="width: auto; height: 36px;">🔗 Link</button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="text-align: center; padding: 40px; opacity: 0.4;">
+                        <span style="font-size: 50px; display: block; margin-bottom: 10px;">📂</span>
+                        <p>No secure files uploaded yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="file-card" style="grid-column: 1 / -1; margin-top: 20px;">
+            <h3>📥 Files Shared With Me</h3>
+            <div class="file-list-scroll">
+                {% if shared_files %}
+                    {% for file in shared_files %}
+                        <div class="file-item">
+                            <div style="flex-grow: 1;">
+                                <strong class="filename-text" style="display: block; margin-bottom: 5px;">{{ file['filename'] }}</strong>
+                                <span class="badge">From: {{ file['owner'] }}</span>
+                            </div>
+                            <a href="{{ url_for('download', file_uuid=file['file_uuid']) }}" class="btn-sm btn-secondary" style="padding: 12px 24px; font-size: 16px;">Decrypt & Download</a>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="text-align: center; padding: 50px; opacity: 0.4;">
+                        <p style="font-size: 20px;">No incoming shared files.</p>
+                        <p style="font-size: 14px;">Encrypted files shared by others will appear here.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

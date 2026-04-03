@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureShare - Shared File Access</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="glass-card" style="max-width: 550px;">
+        <h2>📂 Shared File Access</h2>
+        <div style="margin-bottom: 35px; background: rgba(255, 255, 255, 0.03); padding: 25px; border-radius: 20px; border: 1px solid var(--glass-border);">
+            <p style="font-size: 16px; opacity: 0.8; margin-bottom: 10px;">You have been sent a secure file:</p>
+            <h3 style="color: var(--secondary); margin: 0; font-size: 24px; word-break: break-all;">{{ filename }}</h3>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <p style="font-size: 15px; margin-bottom: 20px; opacity: 0.7; line-height: 1.5;">This link is end-to-end encrypted. Please enter the shared passphrase to decrypt the content.</p>
+            <input type="password" name="passphrase" placeholder="Link Passphrase" required style="text-align: center; font-size: 18px; padding: 15px;">
+            <button type="submit">Decrypt & Download File</button>
+        </form>
+        
+        <p style="margin-top: 35px; font-size: 13px; opacity: 0.5;">
+            🛡️ Securely processed using AES-256 and PBKDF2 key derivation.
+        </p>
+    </div>
+</body>
+</html>
